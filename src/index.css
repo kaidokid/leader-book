@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Noto Sans SC", "Inter", system-ui, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f9f4ea;
+  color: #16162a;
+  min-height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9a96155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c9a96199;
+}
+
+@layer components {
+  /* 主按钮：墨色填充 + 金色文字 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 py-3 font-medium text-gold-300 transition-all hover:bg-ink-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  /* 次按钮：描边 */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink-300 bg-transparent px-5 py-3 font-medium text-ink-700 transition-all hover:border-gold-400 hover:text-gold-600 active:scale-[0.98];
+  }
+  /* 卡片 */
+  .card {
+    @apply rounded-2xl border border-paper-300 bg-paper-50 shadow-sm;
+  }
+  /* 输入框 */
+  .input {
+    @apply w-full rounded-lg border border-ink-200 bg-paper-50 px-4 py-3 text-ink-900 outline-none transition-colors placeholder:text-ink-300 focus:border-gold-400 focus:ring-1 focus:ring-gold-300;
+  }
+}
+
+/* Markdown 报告排版 */
+.report-md {
+  @apply text-ink-800;
+  line-height: 1.8;
+}
+.report-md h1 {
+  @apply mb-2 font-serif text-2xl font-bold text-ink-900 md:text-3xl;
+}
+.report-md h2 {
+  @apply mt-8 mb-4 border-b border-gold-300/40 pb-2 font-serif text-xl font-bold text-ink-900;
+}
+.report-md h3 {
+  @apply mt-6 mb-3 font-serif text-lg font-bold text-ink-800;
+}
+.report-md h4 {
+  @apply mt-4 mb-2 font-serif text-base font-semibold text-ink-700;
+}
+.report-md p {
+  @apply my-3;
+}
+.report-md ul {
+  @apply my-3 list-disc space-y-1 pl-6;
+}
+.report-md ol {
+  @apply my-3 list-decimal space-y-1 pl-6;
+}
+.report-md blockquote {
+  @apply my-4 border-l-4 border-gold-400 bg-gold-50/60 py-2 pl-4 pr-2 italic text-ink-600;
+}
+.report-md table {
+  @apply my-4 w-full border-collapse overflow-hidden rounded-lg text-sm;
+}
+.report-md th {
+  @apply border border-paper-300 bg-ink-900 px-3 py-2 text-left font-medium text-gold-200;
+}
+.report-md td {
+  @apply border border-paper-300 bg-paper-50 px-3 py-2 align-top;
+}
+.report-md tr:nth-child(even) td {
+  @apply bg-paper-100;
+}
+.report-md code {
+  @apply rounded bg-ink-100 px-1.5 py-0.5 font-mono text-sm text-ink-700;
+}
+.report-md pre {
+  @apply my-4 overflow-x-auto rounded-lg bg-ink-900 p-4;
+}
+.report-md pre code {
+  @apply bg-transparent p-0 text-gold-100;
+}
+.report-md hr {
+  @apply my-6 border-ink-200;
+}
+.report-md a {
+  @apply text-gold-600 underline underline-offset-2 hover:text-gold-700;
+}
+.report-md strong {
+  @apply font-semibold text-ink-900;
+}
+
+/* 打字机光标 */
+.cursor-blink::after {
+  content: "▍";
+  @apply animate-pulse text-gold-400;
+  margin-left: 1px;
+}
+
+/* 渐入动画 */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
