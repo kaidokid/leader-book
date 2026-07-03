@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "prebuild": "chmod +x node_modules/.bin/* || true",
+    "build": "tsc -b && vite build"
   },
   "dependencies": {
     "react": "^18.3.1",
