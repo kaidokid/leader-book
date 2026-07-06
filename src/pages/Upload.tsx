@@ -98,20 +98,20 @@ export default function UploadPage() {
 
       <h1 className="font-serif text-xl font-bold text-ink-900">上传一本书</h1>
 
-      {/* 上传区 */}
-      <div
+      {/* 上传区 —— 用 label 包裹 input，兼容性更好 */}
+      <label
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
-        onClick={() => fileInputRef.current?.click()}
+        htmlFor="main-file-input"
         className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 transition-colors ${
           dragging
             ? 'border-gold-400 bg-gold-50'
             : 'border-ink-200 bg-paper-50 hover:border-gold-300'
-        }`}
+        } ${uploading ? 'pointer-events-none' : ''}`}
       >
         {uploading ? (
           <>
@@ -128,6 +128,7 @@ export default function UploadPage() {
           </>
         )}
         <input
+          id="main-file-input"
           ref={fileInputRef}
           type="file"
           accept=".pdf,.txt,.epub"
@@ -139,21 +140,23 @@ export default function UploadPage() {
             e.target.value = '';
           }}
         />
-      </div>
+      </label>
 
-      {/* 从微信聊天中选择 */}
+      {/* 从微信聊天中选择 —— 用 label 包裹 input，避免 button.click() 被微信 WebView 拦截；
+          不设 accept 属性，微信才会弹出含「聊天文件」入口的底部菜单 */}
       <div className="space-y-2">
-        <button
-          onClick={() => wechatInputRef.current?.click()}
-          disabled={uploading}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
+        <label
+          htmlFor="wechat-file-input"
+          className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 transition-colors hover:bg-green-100 ${
+            uploading ? 'pointer-events-none opacity-50' : ''
+          }`}
         >
           <MessageCircle size={16} />
           {inWeChat ? '从微信聊天中选择文件' : '选择文件'}
-        </button>
+        </label>
         {inWeChat ? (
           <p className="text-center text-[11px] text-ink-400">
-            当前在微信内，点击后可选择聊天会话中收到的 PDF / TXT / EPUB 文件
+            点击后微信会弹出底部菜单，选择「聊天文件」即可从任一会话中选 PDF / TXT / EPUB
           </p>
         ) : (
           <div className="rounded-lg bg-paper-100 p-3 text-[11px] leading-relaxed text-ink-500">
@@ -172,10 +175,10 @@ export default function UploadPage() {
           </div>
         )}
         <input
+          id="wechat-file-input"
           ref={wechatInputRef}
           type="file"
-          // accept 用通配，微信内置浏览器会展示「聊天文件」入口
-          accept=".pdf,.txt,.epub,application/pdf,text/plain,application/epub+zip"
+          // 关键：不设 accept，微信才会弹出含「聊天文件」入口的完整菜单
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
