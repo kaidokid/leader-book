@@ -10,21 +10,21 @@ export interface ModelPreset {
 
 export const MODEL_PRESETS: ModelPreset[] = [
   {
-    id: 'glm-4.6',
-    name: 'GLM-4.6',
-    provider: '智谱AI',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    modelName: 'glm-4.6',
-    description: '中文理解强，长文本处理优秀，默认推荐',
-    recommended: true,
-  },
-  {
     id: 'deepseek-v4-flash',
     name: 'DeepSeek-V4-Flash',
     provider: 'DeepSeek',
     baseUrl: 'https://api.deepseek.com/v1',
     modelName: 'deepseek-v4-flash',
-    description: '性价比高，1M 上下文，适合长文本书籍',
+    description: '性价比高，1M 上下文，适合长文本书籍，默认推荐',
+    recommended: true,
+  },
+  {
+    id: 'glm-4.6',
+    name: 'GLM-4.6',
+    provider: '智谱AI',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    modelName: 'glm-4.6',
+    description: '中文理解强，长文本处理优秀',
   },
   {
     id: 'deepseek-v4-pro',

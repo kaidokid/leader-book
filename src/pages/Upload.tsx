@@ -1,15 +1,23 @@
 /** 书籍上传页 */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, FileText, Loader2, CheckCircle2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { UploadCloud, FileText, Loader2, CheckCircle2, ArrowLeft, AlertCircle, MessageCircle } from 'lucide-react';
 import { uploadBook } from '@/api/client';
 import { useModelStore } from '@/store/modelStore';
 import { startGenerate } from '@/api/client';
 import type { UploadResult } from '@/lib/types';
 
+/** 检测当前是否在微信内置浏览器中 */
+function isInWeChatBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes('micromessenger');
+}
+
 export default function UploadPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const wechatInputRef = useRef<HTMLInputElement>(null);
   // 直接订阅 config 字段，确保配置变化时组件重新渲染
   const config = useModelStore((s) => s.config);
   const toApiConfig = useModelStore((s) => s.toApiConfig);
@@ -21,6 +29,7 @@ export default function UploadPage() {
   const [error, setError] = useState('');
   const [title, setTitle] = useState('');
   const [generating, setGenerating] = useState(false);
+  const inWeChat = useMemo(() => isInWeChatBrowser(), []);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -126,6 +135,37 @@ export default function UploadPage() {
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) handleFile(file);
+            // 重置 value，便于重复选择同一文件
+            e.target.value = '';
+          }}
+        />
+      </div>
+
+      {/* 从微信聊天中选择 */}
+      <div className="space-y-2">
+        <button
+          onClick={() => wechatInputRef.current?.click()}
+          disabled={uploading}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
+        >
+          <MessageCircle size={16} />
+          {inWeChat ? '从微信聊天中选择文件' : '选择文件（含微信聊天文件）'}
+        </button>
+        <p className="text-center text-[11px] text-ink-400">
+          {inWeChat
+            ? '当前在微信内，点击后可选择聊天会话中收到的 PDF / TXT / EPUB 文件'
+            : '在微信内打开本页时，可直接选聊天会话中的文件；当前浏览器将打开系统文件选择器（无法直接访问微信聊天文件，请先将文件转发/保存到本地）'}
+        </p>
+        <input
+          ref={wechatInputRef}
+          type="file"
+          // accept 用通配，微信内置浏览器会展示「聊天文件」入口
+          accept=".pdf,.txt,.epub,application/pdf,text/plain,application/epub+zip"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+            e.target.value = '';
           }}
         />
       </div>

@@ -79,36 +79,53 @@ interface JobState {
 
 const jobs = new Map<string, JobState>();
 
+/** 获取本地当天的日期字符串（YYYY-MM-DD），避免模型自行编造日期 */
+function getTodayString(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /** 构建 user prompt —— upload 模式 */
 function buildUploadUserPrompt(bookText: string, title: string): string {
   // 不再截断，现代模型（如 DSv4）支持百万级 token 上下文
   // 若文本超长，由模型自行处理或 API 层报错
   const totalChars = bookText.length;
+  const today = getTodayString();
   return [
     `请基于以下书籍全文，执行 leader-book-skill 的 10 步精读萃取流程，生成一份完整的精读报告。`,
     `书籍标题：${title}`,
     `书籍全文长度：${totalChars.toLocaleString()} 字`,
+    `\n重要：报告开头的「生成日期」必须严格使用今天的日期：${today}（YYYY-MM-DD 格式），不得使用其他日期。`,
     `\n--- 书籍全文开始 ---`,
     bookText,
     `--- 书籍全文结束 ---`,
     `\n请严格按技能要求的 10 个步骤与输出模板生成报告，使用 Markdown 格式，包含 Mermaid 图表与表格。`,
-    `\n重要提示：Mermaid 图表中的节点 ID 必须使用英文字母/数字，不能使用中文（中文只能出现在方括号标签内，如 A["中文标签"]）。`,
+    `\n重要提示：`,
+    `1. 直接以「# 精读报告：《书名》」作为输出的第一行开始，不要有任何寒暄、确认、过渡语句（如「好的」「已收到」「我将为您生成」等），不要解释你将做什么，直接输出报告正文。`,
+    `2. Mermaid 图表中的节点 ID 必须使用英文字母/数字，不能使用中文（中文只能出现在方括号标签内，如 A["中文标签"]）。`,
   ].join('\n');
 }
 
 /** 构建 user prompt —— search 模式 */
 function buildSearchUserPrompt(book: BookResult, found: boolean): string {
   const info = buildBookInfoText(book);
+  const today = getTodayString();
   const header = found
     ? `请基于以下检索到的书籍信息，执行 leader-book-skill 的 10 步精读萃取流程，生成一份完整的精读报告。`
     : `未检索到本书的完整原文。请基于以下检索到的书籍元信息（书名、作者、简介、目录摘要等）以及你对该书的了解，尽可能完整地执行 leader-book-skill 的 10 步精读萃取流程。由于缺乏完整原文，请在报告开头明确标注「资料来源说明」，说明本报告基于检索到的公开资料生成，部分章节内容可能为基于已知信息的合理推演，建议读者结合原书核实。`;
   return [
     header,
+    `\n重要：报告开头的「生成日期」必须严格使用今天日期：${today}（YYYY-MM-DD 格式），不得使用其他日期。`,
     `\n--- 检索到的书籍信息 ---`,
     info,
     `--- 信息结束 ---`,
     `\n请严格按技能要求的 10 个步骤与输出模板生成报告，使用 Markdown 格式，包含 Mermaid 图表与表格。`,
-    found ? '' : `\n重要：报告开头必须包含「资料来源说明」段落，明确告知读者本报告的资料依据与可能局限。`,
+    `\n重要提示：`,
+    `1. 直接以「# 精读报告：《书名》」或「# 精读报告：书名」作为输出的第一行开始，不要有任何寒暄、确认、过渡语句（如「好的」「已收到」「我将为您生成」等），不要解释你将做什么，直接输出报告正文。`,
+    found ? '' : `2. 报告开头必须包含「资料来源说明」段落，明确告知读者本报告的资料依据与可能局限。`,
   ].join('\n');
 }
 
@@ -241,15 +258,31 @@ async function runGenerate(jobId: string, params: GenerateParams): Promise<void>
       return;
     }
 
+    // 后处理 1：剥离报告正文之前的寒暄语
+    // 模型有时会输出「好的，管理者。已收到...」之类的过渡语句
+    // 找到第一个 Markdown 一级标题（# ...）的位置，截断之前的所有内容
+    let cleanedText = fullText;
+    const firstHeadingMatch = fullText.match(/^#\s+\S/m);
+    if (firstHeadingMatch && firstHeadingMatch.index !== undefined && firstHeadingMatch.index > 0) {
+      cleanedText = fullText.slice(firstHeadingMatch.index);
+    }
+
+    // 后处理 2：强制校正报告中的生成日期为当天日期，避免模型编造
+    const today = getTodayString();
+    const normalizedText = cleanedText.replace(
+      /(生成日期[：:]\s*)\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?/,
+      `$1${today}`,
+    );
+
     // 保存报告（IndexedDB 异步存储）
-    const relevance = extractRelevance(fullText);
-    const readTime = extractReadTime(fullText);
+    const relevance = extractRelevance(normalizedText);
+    const readTime = extractReadTime(normalizedText);
     const author =
       params.mode === 'search'
         ? params.bookInfo?.authors?.join('、')
         : undefined;
 
-    const reportMeta = await saveReport(fullText, {
+    const reportMeta = await saveReport(normalizedText, {
       id: '',
       title,
       author,

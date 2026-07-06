@@ -99,6 +99,14 @@ export default function SearchPage() {
         </button>
       </div>
 
+      {/* 检索中提示 */}
+      {loading && (
+        <div className="flex items-center gap-2 rounded-lg border border-gold-300 bg-gold-50 p-3 text-xs text-gold-800">
+          <Loader2 size={14} className="animate-spin text-gold-600" />
+          <span>图书检索中，可能花费时间较长，请耐心等待…</span>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
           {error}

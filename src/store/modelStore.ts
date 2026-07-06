@@ -18,10 +18,10 @@ interface ModelStore {
 }
 
 const DEFAULT_CONFIG: ModelConfig = {
-  presetId: 'glm-4.6',
+  presetId: 'deepseek-v4-flash',
   apiKey: '',
-  baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-  modelName: 'glm-4.6',
+  baseUrl: 'https://api.deepseek.com/v1',
+  modelName: 'deepseek-v4-flash',
 };
 
 export const useModelStore = create<ModelStore>()(

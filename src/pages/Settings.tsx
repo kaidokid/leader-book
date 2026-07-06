@@ -208,6 +208,17 @@ export default function SettingsPage() {
         <p className="mt-1">
           精读萃取 · 基于 leader-book-skill 十步萃取流程，为管理者快速榨干一本书。
         </p>
+        <p className="mt-2">
+          作者：Mercury
+          <br />
+          邮箱：
+          <a
+            href="mailto:siweiwang555@foxmail.com"
+            className="text-gold-600 hover:text-gold-700"
+          >
+            siweiwang555@foxmail.com
+          </a>
+        </p>
       </section>
     </div>
   );

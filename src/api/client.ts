@@ -19,6 +19,7 @@ import {
   startGenerateJob,
   subscribeJob,
   abortJob,
+  getJob,
 } from '@/lib/reportGenerate';
 import {
   listReports as listReportsFromStorage,
@@ -77,20 +78,15 @@ export function subscribeGenerate(
   onEvent: (evt: JobEvent) => void,
   onError?: (err: Error) => void,
 ): () => void {
-  let receivedAny = false;
-  return subscribeJob(
-    jobId,
-    (evt) => {
-      receivedAny = true;
-      onEvent(evt);
-    },
-    () => {
-      // 任务不存在或已结束且未收到任何事件时，通知错误
-      if (!receivedAny) {
-        onError?.(new Error('任务不存在或已结束'));
-      }
-    },
-  );
+  // 订阅前同步检查任务是否存在（不存在通常是页面刷新导致内存任务丢失）
+  const job = getJob(jobId);
+  if (!job) {
+    onError?.(new Error('任务不存在，可能页面已被刷新，请重新生成报告'));
+    return () => {};
+  }
+  // 任务存在则正常订阅；onEnd 不再误报错误
+  // 错误只能通过 'error' 事件传递，正常结束（done/aborted）不会触发 onError
+  return subscribeJob(jobId, onEvent, () => {});
 }
 
 /** 中止生成任务 */
