@@ -162,15 +162,7 @@ export default function UploadPage() {
           <div className="rounded-lg bg-paper-100 p-3 text-[11px] leading-relaxed text-ink-500">
             <p className="font-medium text-ink-600">无法直接访问微信聊天文件？</p>
             <p className="mt-1">
-              微信聊天文件只能在微信内置浏览器里选择。当前是外部浏览器，请按以下步骤操作：
-            </p>
-            <ol className="mt-1.5 space-y-0.5 pl-4">
-              <li>1. 在微信里长按收到的书籍文件</li>
-              <li>2. 选择「保存到手机」/「另存为」</li>
-              <li>3. 回到本页点击上方按钮，从系统文件管理器选择该文件</li>
-            </ol>
-            <p className="mt-1.5 text-ink-400">
-              或：在微信中打开本网页链接，即可直接选择聊天文件
+              在微信里收到书籍文件后，点击「保存到手机」，微信会提示保存路径。回到本页点击上方按钮，在该路径下即可找到文件。
             </p>
           </div>
         )}

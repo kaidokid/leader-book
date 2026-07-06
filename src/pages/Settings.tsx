@@ -70,6 +70,9 @@ export default function SettingsPage() {
       {/* 模型预设选择 */}
       <section>
         <h2 className="mb-2 text-xs font-medium text-ink-500">选择模型</h2>
+        <div className="mb-3 rounded-lg border border-gold-200 bg-gold-50 p-2.5 text-[11px] leading-relaxed text-gold-800">
+          💡 建议优先选择支持 1M 上下文的模型（详见各模型标签），整本书可一次读完，避免内容截断
+        </div>
         <div className="space-y-2">
           {presets.map((p) => {
             const active = config.presetId === p.id;
@@ -82,7 +85,7 @@ export default function SettingsPage() {
                 }`}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-serif text-sm font-bold text-ink-900">
                       {p.name}
                     </span>
@@ -91,8 +94,29 @@ export default function SettingsPage() {
                         <Star size={9} /> 推荐
                       </span>
                     )}
+                    {p.contextLength && (
+                      <span className="rounded bg-ink-100 px-1.5 py-0.5 text-[10px] text-ink-500">
+                        {p.contextLength >= 1_000_000
+                          ? `${p.contextLength / 1_000_000}M`
+                          : `${p.contextLength / 1000}K`}
+                        上下文
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-ink-400">{p.provider}</p>
+                  <p className="text-xs text-ink-400">
+                    {p.provider}
+                    {p.apiKeyUrl && (
+                      <a
+                        href={p.apiKeyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="ml-1 text-gold-600 hover:text-gold-700 hover:underline"
+                      >
+                        申请 Key →
+                      </a>
+                    )}
+                  </p>
                   <p className="mt-0.5 text-[11px] text-ink-500">{p.description}</p>
                 </div>
                 {active && (

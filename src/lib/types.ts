@@ -8,6 +8,10 @@ export interface ModelPreset {
   modelName: string;
   description: string;
   recommended?: boolean;
+  /** 上下文长度（token） */
+  contextLength?: number;
+  /** 申请 API Key 的链接 */
+  apiKeyUrl?: string;
 }
 
 export interface ModelConfig {
