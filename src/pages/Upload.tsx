@@ -149,13 +149,28 @@ export default function UploadPage() {
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
         >
           <MessageCircle size={16} />
-          {inWeChat ? '从微信聊天中选择文件' : '选择文件（含微信聊天文件）'}
+          {inWeChat ? '从微信聊天中选择文件' : '选择文件'}
         </button>
-        <p className="text-center text-[11px] text-ink-400">
-          {inWeChat
-            ? '当前在微信内，点击后可选择聊天会话中收到的 PDF / TXT / EPUB 文件'
-            : '在微信内打开本页时，可直接选聊天会话中的文件；当前浏览器将打开系统文件选择器（无法直接访问微信聊天文件，请先将文件转发/保存到本地）'}
-        </p>
+        {inWeChat ? (
+          <p className="text-center text-[11px] text-ink-400">
+            当前在微信内，点击后可选择聊天会话中收到的 PDF / TXT / EPUB 文件
+          </p>
+        ) : (
+          <div className="rounded-lg bg-paper-100 p-3 text-[11px] leading-relaxed text-ink-500">
+            <p className="font-medium text-ink-600">无法直接访问微信聊天文件？</p>
+            <p className="mt-1">
+              微信聊天文件只能在微信内置浏览器里选择。当前是外部浏览器，请按以下步骤操作：
+            </p>
+            <ol className="mt-1.5 space-y-0.5 pl-4">
+              <li>1. 在微信里长按收到的书籍文件</li>
+              <li>2. 选择「保存到手机」/「另存为」</li>
+              <li>3. 回到本页点击上方按钮，从系统文件管理器选择该文件</li>
+            </ol>
+            <p className="mt-1.5 text-ink-400">
+              或：在微信中打开本网页链接，即可直接选择聊天文件
+            </p>
+          </div>
+        )}
         <input
           ref={wechatInputRef}
           type="file"

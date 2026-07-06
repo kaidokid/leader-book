@@ -1,8 +1,10 @@
 /**
  * 书籍检索服务（浏览器端版本）
- * 通过多个 CORS 代理轮询访问 豆瓣 / Open Library / Google Books / 当当
- * 各源并行检索（Promise.allSettled），任一代理失败自动切换下一个
- * 即使检索失败，也允许用户基于书名生成报告（UI 层已处理）
+ * 策略：
+ *  - Google Books / Open Library 原生支持 CORS，优先直连，失败再走代理
+ *  - 豆瓣不支持 CORS，必须走代理
+ *  - 各源并行检索（Promise.allSettled），单源失败不阻塞
+ *  - 即使检索失败，也允许用户基于书名生成报告（UI 层已处理）
  */
 export interface BookResult {
   id: string;
@@ -29,6 +31,7 @@ const CORS_PROXIES: Array<(url: string) => string> = [
   (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
   (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
   (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+  (u) => `https://proxy.cors.sh/${u}`,
 ];
 
 /** 带超时的 fetch */
@@ -46,12 +49,21 @@ async function fetchWithTimeout(
   }
 }
 
-/** 通过多个 CORS 代理轮询，直到一个成功 */
-async function fetchViaProxies(
+/** 先直连，失败再依次尝试 CORS 代理 */
+async function fetchWithFallback(
   targetUrl: string,
   opts: RequestInit = {},
   timeoutMs = 10000,
 ): Promise<Response> {
+  // 1) 先直连（很多 API 支持 CORS，省去代理开销与故障）
+  try {
+    const res = await fetchWithTimeout(targetUrl, opts, timeoutMs);
+    if (res.ok) return res;
+  } catch {
+    // 直连失败（CORS / 网络），继续走代理
+  }
+
+  // 2) 依次尝试 CORS 代理
   let lastErr: unknown;
   for (const proxy of CORS_PROXIES) {
     const proxiedUrl = proxy(targetUrl);
@@ -63,13 +75,13 @@ async function fetchViaProxies(
       lastErr = e;
     }
   }
-  throw new Error(`所有 CORS 代理均失败：${(lastErr as Error)?.message || '未知错误'}`);
+  throw new Error(`直连与所有 CORS 代理均失败：${(lastErr as Error)?.message || '未知错误'}`);
 }
 
-/** 调用豆瓣图书 suggest API（中文书籍覆盖好） */
+/** 调用豆瓣图书 suggest API（中文书籍覆盖好，需走代理） */
 async function searchDouban(query: string): Promise<BookResult[]> {
   const targetUrl = `https://book.douban.com/j/subject_suggest?q=${encodeURIComponent(query)}`;
-  const res = await fetchViaProxies(targetUrl, { headers: { Accept: 'application/json' } });
+  const res = await fetchWithFallback(targetUrl, { headers: { Accept: 'application/json' } });
   const data = await res.json();
   const items = (Array.isArray(data) ? data : data.items || []) as any[];
   return items
@@ -86,10 +98,10 @@ async function searchDouban(query: string): Promise<BookResult[]> {
     }));
 }
 
-/** 调用 Open Library API */
+/** 调用 Open Library API（原生支持 CORS） */
 async function searchOpenLibrary(query: string): Promise<BookResult[]> {
   const targetUrl = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=key,title,author_name,first_sentence,cover_i,publisher,first_publish_year,subject`;
-  const res = await fetchViaProxies(targetUrl, { headers: { Accept: 'application/json' } });
+  const res = await fetchWithFallback(targetUrl, { headers: { Accept: 'application/json' } });
   const data = await res.json();
   const docs = (data.docs || []) as any[];
   return docs.map((doc) => ({
@@ -111,10 +123,10 @@ async function searchOpenLibrary(query: string): Promise<BookResult[]> {
   }));
 }
 
-/** 调用 Google Books API */
+/** 调用 Google Books API（原生支持 CORS） */
 async function searchGoogleBooks(query: string): Promise<BookResult[]> {
   const targetUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&printType=books`;
-  const res = await fetchViaProxies(targetUrl, { headers: { Accept: 'application/json' } });
+  const res = await fetchWithFallback(targetUrl, { headers: { Accept: 'application/json' } });
   const data = await res.json();
   const items = (data.items || []) as any[];
   return items.map((item) => {
@@ -137,7 +149,7 @@ async function searchGoogleBooks(query: string): Promise<BookResult[]> {
 async function searchOpenLibrarySubjects(query: string): Promise<BookResult[]> {
   const targetUrl = `https://openlibrary.org/subjects/${encodeURIComponent(query.toLowerCase())}.json?limit=10`;
   try {
-    const res = await fetchViaProxies(targetUrl, { headers: { Accept: 'application/json' } });
+    const res = await fetchWithFallback(targetUrl, { headers: { Accept: 'application/json' } });
     const data = await res.json();
     const works = (data.works || []) as any[];
     return works.map((w) => ({
